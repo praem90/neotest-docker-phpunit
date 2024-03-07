@@ -46,10 +46,10 @@ fn main() {
     binding.output().expect("Failed");
 
     Command::new("docker").args([
-                                "compose",
-                                "cp",
-                                &format!("php:{}", &tmp_path),
-                                &args.log_junit,
+        "compose",
+        "cp",
+        &format!("php:{}", &tmp_path),
+        &args.log_junit,
     ]).output().expect("Failed");
 
     let buffer = fs::read_to_string(&args.log_junit).unwrap();
@@ -91,8 +91,6 @@ fn main() {
     let mut new_file = File::create(&args.log_junit).unwrap();
 
     new_file.write_all(&result).unwrap();
-
-    println!("{}", String::from_utf8(result).unwrap());
 
     exit(0)
 }
