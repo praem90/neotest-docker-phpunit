@@ -22,5 +22,5 @@ require('neotest').setup({
 ```
 
 ## TODO
- [ ] Make the root_dir, container name and coompose as args
- [ ] Use this command only if the project uses the docker compose
+ - [ ] Make the root_dir, container name and coompose as args
+ - [ ] Use this command only if the project uses the docker compose
