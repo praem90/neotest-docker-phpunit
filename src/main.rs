@@ -59,21 +59,20 @@ fn main() {
 
     loop {
         match xml_reader.read_event() {
-            Ok(Event::Start(e)) => {
+            Ok(Event::Start(e)) | Ok(Event::Empty(e)) => {
                 if let Ok(Some(attr)) = e.try_get_attribute("file") {
                     let elem = replace_file_attr(&e, &attr);
-                    assert!(xml_wtitter.write_event(Event::Start(elem)).is_ok());
-                } else {
-                    assert!(xml_wtitter.write_event(Event::Start(e)).is_ok());
+
+                    if e.name().as_ref() == b"testcase" {
+                        assert!(xml_wtitter.write_event(Event::Empty(elem)).is_ok());
+                    } else {
+                        assert!(xml_wtitter.write_event(Event::Start(elem)).is_ok());
+                    }
+
+                    continue;
                 }
-            },
-            Ok(Event::Empty(e)) => {
-                if let Ok(Some(attr)) = e.try_get_attribute("file") {
-                    let elem = replace_file_attr(&e, &attr);
-                    assert!(xml_wtitter.write_event(Event::Empty(elem)).is_ok());
-                } else {
-                    assert!(xml_wtitter.write_event(Event::Start(e)).is_ok());
-                }
+
+                assert!(xml_wtitter.write_event(Event::Start(e)).is_ok());
             },
             Ok(Event::End(e)) => {
                 assert!(xml_wtitter.write_event(Event::End(e)).is_ok());
