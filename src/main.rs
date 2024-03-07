@@ -13,7 +13,7 @@ struct Cli {
     log_junit: String,
 
     #[arg(long)]
-    filter: String,
+    filter: Option<String>,
 }
 
 fn main() {
@@ -25,18 +25,25 @@ fn main() {
 
     println!("tmp_path : {}", tmp_path);
 
-    Command::new("docker").args([
-                                "compose",
-                                "exec",
-                                "php",
-                                "./vendor/bin/phpunit",
-                                "--no-coverage",
-                                "--log-junit",
-                                &tmp_path,
-                                "--filter",
-                                &args.filter,
-                                &file,
-    ]).output().expect("Failed");
+    let mut binding = Command::new("docker");
+    binding.args([
+        "compose",
+        "exec",
+        "php",
+        "./vendor/bin/phpunit",
+        "--no-coverage",
+        "--log-junit",
+        &tmp_path,
+    ]);
+
+    if let Some(filter) = args.filter {
+        binding.arg("--filter");
+        binding.arg(&filter);
+    }
+
+    binding.arg(&file);
+
+    binding.output().expect("Failed");
 
     Command::new("docker").args([
                                 "compose",
