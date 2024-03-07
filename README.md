@@ -23,5 +23,6 @@ require('neotest').setup({
 
 ## TODO
  - [ ] Make the root_dir, container name and coompose as args
+ - [ ] Unit tests
  - [ ] Use this command only if the project uses the docker compose
  - [ ] Create a `neotest-docker-phpunit` adapter for the `neotest` plugin
