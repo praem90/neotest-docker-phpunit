@@ -1,6 +1,6 @@
 [package]
 name = "neotest-docker-phpunit"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Mohan Raj <praem1990@gmail.com>"]
 license = "MIT OR Apache-2.0"
