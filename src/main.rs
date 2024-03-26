@@ -1,4 +1,4 @@
-use std::{process::{Command, exit}, io::{Cursor, Write}, borrow::Cow, fs::File};
+use std::{process::{Command, self}, io::{Cursor, Write}, borrow::Cow, fs::File};
 use quick_xml::{Reader, Writer, events::{Event, BytesStart, attributes::Attribute}};
 use clap::Parser;
 use uuid::Uuid;
@@ -14,6 +14,15 @@ struct Cli {
 
     #[arg(long)]
     filter: Option<String>,
+
+    #[arg(long, short)]
+    volume: Option<String>,
+
+    #[arg(long, short)]
+    container: Option<String>,
+
+    #[arg(long, default_value_t=false)]
+    standalone: bool,
 }
 
 fn main() {
@@ -21,15 +30,30 @@ fn main() {
     println!("The first argument is {:?}", args);
 
     let tmp_path = format!("/tmp/{}.xml", Uuid::new_v4());
-    let file = args.path.replace("/Users/praem90/projects/track-payments", "/app");
 
-    println!("tmp_path : {}", tmp_path);
+    let paths = match args.volume {
+        None => vec![args.path.to_string(), args.path.to_string()],
+        Some(v) => {
+            let paths: Vec<_> = v.split(":").collect();
+            if paths.len() < 2 {
+                panic!("Unable to parse volume")
+            }
+            vec![paths[0].to_owned(), paths[1].to_owned()]
+        },
+    };
+
+    let file = args.path.replace(&paths[0], &paths[1]);
+
+    let container = match args.container {
+        Some(c) => c,
+        None => "php".to_string(),
+    };
 
     let mut binding = Command::new("docker");
     binding.args([
-        "compose",
+        if args.standalone { "" } else {"compose"},
         "exec",
-        "php",
+        &container,
         "./vendor/bin/phpunit",
         "--no-coverage",
         "--log-junit",
@@ -42,17 +66,25 @@ fn main() {
     }
 
     binding.arg(&file);
+    println!("{:?}", binding.get_args());
 
     binding.output().expect("Failed");
 
     Command::new("docker").args([
-        "compose",
+        if args.standalone { "" } else {"compose"},
         "cp",
-        &format!("php:{}", &tmp_path),
+        &format!("{}:{}", &container, &tmp_path),
         &args.log_junit,
     ]).output().expect("Failed");
 
-    let buffer = fs::read_to_string(&args.log_junit).unwrap();
+    let buffer = match fs::read_to_string(&args.log_junit) {
+        Ok(b) => b,
+        Err(_) => {
+            eprintln!("Unable to find the local junit file");
+            process::exit(1)
+        }
+    };
+
     let mut xml_reader = Reader::from_str(&buffer);
 
     let mut xml_wtitter = Writer::new(Cursor::new(Vec::new()));
@@ -61,7 +93,7 @@ fn main() {
         match xml_reader.read_event() {
             Ok(Event::Start(e)) | Ok(Event::Empty(e)) => {
                 if let Ok(Some(attr)) = e.try_get_attribute("file") {
-                    let elem = replace_file_attr(&e, &attr);
+                    let elem = replace_file_attr(&e, &attr, &paths);
 
                     if e.name().as_ref() == b"testcase" {
                         assert!(xml_wtitter.write_event(Event::Empty(elem)).is_ok());
@@ -92,12 +124,12 @@ fn main() {
 
     new_file.write_all(&result).unwrap();
 
-    exit(0)
+    process::exit(0)
 }
 
-fn replace_file_attr(e: &BytesStart, attr: &Attribute) -> BytesStart<'static> {
+fn replace_file_attr(e: &BytesStart, attr: &Attribute, paths: &Vec<String>) -> BytesStart<'static> {
     let a_path = String::from_utf8(attr.value.to_vec()).unwrap()
-        .replace("/app", "/Users/praem90/projects/track-payments");
+        .replace(&paths[1], &paths[0]); // Replace in the reverse order
 
     let mut elem = match e.name().as_ref() {
         b"testsuite" => BytesStart::new("testsuite"),
