@@ -1,5 +1,5 @@
 # PHPUnit docker test
-Run phpunit tests in the docker container. This is a helper lib for (neotest-phpunit)[https://github.com/olimorris/neotest-phpunit] but works standalone. 
+Run phpunit tests in the docker container. This is a helper lib for (neotest-phpunit)[https://github.com/olimorris/neotest-phpunit] but works standalone.
 
 ## Installation
 Install from source
@@ -14,15 +14,30 @@ Configure your neovim neotest-phpunit to use this binary instead of phpunit
 ```lua
 require('neotest').setup({
     adapters = {
-        require('neotest-phpunit')({
-            phpunit_cmd = "{PATH_TO}/neotest-docker-phpunit/target/debug/neotest-docker-phpunit"
+        require('neotest-docker-phpunit')({
+            phpunit_cmd = "{PATH_TO}/neotest-docker-phpunit",
+            docker_phpunit = {
+                "/home/user/projects/another/project" = {
+                    container   = "phpunit-debug",
+                    volume      = "/home/user/projects/another/project:/docker/work/dir"
+                    standalone  = true,
+                }
+                default = {
+                    container   = "phpunit",
+                    volume      = "/source/dir:/docker/work/dir"
+                    standalone  = false,
+                    callback    = function (spec, args)
+                        return spec
+                    end
+                }
+            }
         }),
     }
 })
+
 ```
 
 ## TODO
- - [ ] Make the root_dir, container name and coompose as args
+ - [x] Make the root_dir, container name and coompose as args
  - [ ] Unit tests
- - [ ] Use this command only if the project uses the docker compose
- - [ ] Create a `neotest-docker-phpunit` adapter for the `neotest` plugin
+ - [x] Create a `neotest-docker-phpunit` adapter for the `neotest` plugin
