@@ -1,5 +1,5 @@
 # PHPUnit docker test
-Run phpunit tests in the docker container. This is a helper lib for (neotest-phpunit)[https://github.com/olimorris/neotest-phpunit] but works standalone.
+Run phpunit tests in the docker container. This is a helper lib for (neotest-docker-phpunit)[https://github.com/praem90/neotest-docker-phpunit.nvim] but works standalone.
 
 ## Installation
 Install from source

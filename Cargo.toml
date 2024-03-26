@@ -2,6 +2,15 @@
 name = "neotest-docker-phpunit"
 version = "0.1.0"
 edition = "2021"
+authors = ["Mohan Raj <praem1990@gmail.com>"]
+license = "MIT OR Apache-2.0"
+description = "A tool to execute phpunit test cases in the docker container and export the results."
+readme = "README.md"
+homepage = "https://github.com/praem90/neotest-docker-phpunit"
+repository = "https://github.com/praem90/neotest-docker-phpunit"
+keywords = ["cli", "docker", "phpunit", "neotest"]
+categories = ["command-line-utilities"]
+
 
 [dependencies]
 clap = { version = "4.5.2", features = ["derive"] }
