@@ -9,33 +9,21 @@ cd neotest-docker-phpunit
 cargo build
 ```
 
-## Configuration
-Configure your neovim neotest-phpunit to use this binary instead of phpunit
-```lua
-require('neotest').setup({
-    adapters = {
-        require('neotest-docker-phpunit')({
-            phpunit_cmd = "{PATH_TO}/neotest-docker-phpunit",
-            docker_phpunit = {
-                "/home/user/projects/another/project" = {
-                    container   = "phpunit-debug",
-                    volume      = "/home/user/projects/another/project:/docker/work/dir"
-                    standalone  = true,
-                }
-                default = {
-                    container   = "phpunit",
-                    volume      = "/source/dir:/docker/work/dir"
-                    standalone  = false,
-                    callback    = function (spec, args)
-                        return spec
-                    end
-                }
-            }
-        }),
-    }
-})
-
+Install from cargo
+```zsh
+cargo install neotest-docker-phpunit
 ```
+
+## Usage
+```zsh
+neotest-docker-phpunit /path/to/php/file/folder --log-junit=path/to/the/result.xml --container=php --volume="docker/style/:volume/map" --standalone=false
+```
+
+## Args
+ - `--container` name or id of the phpunit container
+ - `--volume` Map work dir to the container like docker's volume mount. E.g., `host/path:docker/path`
+ - `--standalone` Whether use docker compose or not. Default `false` means `docker compose` will be used
+ - `--log-junit` Unit test results xml file. Unit test results will be stored in this file.
 
 ## TODO
  - [x] Make the root_dir, container name and coompose as args
