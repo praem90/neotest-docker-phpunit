@@ -26,6 +26,7 @@ neotest-docker-phpunit /path/to/php/file/folder --log-junit=path/to/the/result.x
  - `--log-junit` Unit test results xml file. Unit test results will be stored in this file.
 
 ## TODO
- - [x] Make the root_dir, container name and coompose as args
  - [ ] Unit tests
+ - [ ] Improve STDOUT
+ - [x] Make the root_dir, container name and coompose as args
  - [x] Create a `neotest-docker-phpunit` adapter for the `neotest` plugin

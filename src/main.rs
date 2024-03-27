@@ -1,8 +1,8 @@
-use std::{process::{Command, self}, io::{Cursor, Write}, borrow::Cow, fs::File};
+use std::{process::{Command, self}, io::{Cursor, Write}, borrow::Cow, fs, fs::File};
 use quick_xml::{Reader, Writer, events::{Event, BytesStart, attributes::Attribute}};
 use clap::Parser;
 use uuid::Uuid;
-use std::fs;
+use log::info;
 
 #[derive(Parser, Debug)] // requires `derive` feature
 struct Cli {
@@ -27,7 +27,7 @@ struct Cli {
 
 fn main() {
     let args = Cli::parse();
-    println!("The first argument is {:?}", args);
+    info!("The first argument is {:?}", args);
 
     let tmp_path = format!("/tmp/{}.xml", Uuid::new_v4());
 
@@ -66,7 +66,7 @@ fn main() {
     }
 
     binding.arg(&file);
-    println!("{:?}", binding.get_args());
+    info!("{:?}", binding.get_args());
 
     binding.output().expect("Failed");
 
