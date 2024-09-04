@@ -1,4 +1,4 @@
-use std::{process::{Command, self}, io::{Cursor, Write}, borrow::Cow, fs, fs::File};
+use std::{process::{Command, self}, io::{Cursor, Write, stdout, stderr}, borrow::Cow, fs, fs::File};
 use quick_xml::{Reader, Writer, events::{Event, BytesStart, attributes::Attribute}};
 use clap::Parser;
 use uuid::Uuid;
@@ -49,6 +49,7 @@ fn main() {
         None => "php".to_string(),
     };
 
+    // Execute the PHPUnit
     let mut binding = Command::new("docker");
     binding.args([
         if args.standalone { "" } else {"compose"},
@@ -68,8 +69,12 @@ fn main() {
     binding.arg(&file);
     info!("{:?}", binding.get_args());
 
-    binding.output().expect("Failed");
+    let output = binding.output().expect("Failed");
 
+    stdout().write_all(&output.stdout).unwrap();
+    stderr().write_all(&output.stderr).unwrap();
+
+    // Copy the log_junit file to the host machine
     Command::new("docker").args([
         if args.standalone { "" } else {"compose"},
         "cp",
@@ -128,7 +133,7 @@ fn main() {
 
     new_file.write_all(&result).unwrap();
 
-    process::exit(0)
+    process::exit(output.status.code().unwrap())
 }
 
 fn replace_file_attr(e: &BytesStart, attr: &Attribute, paths: &Vec<String>) -> BytesStart<'static> {
