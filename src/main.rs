@@ -1,8 +1,17 @@
-use std::{process::{Command, self}, io::{Cursor, Write, stdout, stderr}, borrow::Cow, fs, fs::File};
-use quick_xml::{Reader, Writer, events::{Event, BytesStart, attributes::Attribute}};
 use clap::Parser;
-use uuid::Uuid;
 use log::info;
+use quick_xml::{
+    events::{attributes::Attribute, BytesStart, Event},
+    Reader, Writer,
+};
+use std::{
+    borrow::Cow,
+    fs,
+    fs::File,
+    io::{stderr, stdout, Cursor, Write},
+    process::{self, Command},
+};
+use uuid::Uuid;
 
 #[derive(Parser, Debug)] // requires `derive` feature
 struct Cli {
@@ -21,7 +30,7 @@ struct Cli {
     #[arg(long, short)]
     container: Option<String>,
 
-    #[arg(long, default_value_t=false)]
+    #[arg(long, default_value_t = false)]
     standalone: bool,
 }
 
@@ -39,7 +48,7 @@ fn main() {
                 panic!("Unable to parse volume")
             }
             vec![paths[0].to_owned(), paths[1].to_owned()]
-        },
+        }
     };
 
     let file = args.path.replace(&paths[0], &paths[1]);
@@ -49,17 +58,22 @@ fn main() {
         None => "php".to_string(),
     };
 
-    // Execute the PHPUnit
-    let mut binding = Command::new("docker");
-    binding.args([
-        if args.standalone { "" } else {"compose"},
+    let mut command_args = vec![
         "exec",
         &container,
         "./vendor/bin/phpunit",
         "--no-coverage",
         "--log-junit",
         &tmp_path,
-    ]);
+    ];
+
+    if !args.standalone {
+        command_args.insert(0, "compose");
+    }
+
+    // Execute the PHPUnit
+    let mut binding = Command::new("docker");
+    binding.args(command_args);
 
     if let Some(filter) = args.filter {
         binding.arg("--filter");
@@ -75,12 +89,14 @@ fn main() {
     stderr().write_all(&output.stderr).unwrap();
 
     // Copy the log_junit file to the host machine
-    Command::new("docker").args([
-        if args.standalone { "" } else {"compose"},
-        "cp",
-        &format!("{}:{}", &container, &tmp_path),
-        &args.log_junit,
-    ]).output().expect("Failed");
+    let mut log_junit_args = vec!["cp", &tmp_path, &args.log_junit];
+    if !args.standalone {
+        log_junit_args.insert(0, "compose");
+    }
+    Command::new("docker")
+        .args(log_junit_args)
+        .output()
+        .expect("Failed");
 
     let buffer = match fs::read_to_string(&args.log_junit) {
         Ok(b) => b,
@@ -105,7 +121,7 @@ fn main() {
                 }
 
                 assert!(xml_wtitter.write_event(Event::Empty(e)).is_ok());
-            },
+            }
             Ok(Event::Start(e)) => {
                 if let Ok(Some(attr)) = e.try_get_attribute("file") {
                     let elem = replace_file_attr(&e, &attr, &paths);
@@ -114,14 +130,14 @@ fn main() {
                 }
 
                 assert!(xml_wtitter.write_event(Event::Start(e)).is_ok());
-            },
+            }
             Ok(Event::End(e)) => {
                 assert!(xml_wtitter.write_event(Event::End(e)).is_ok());
-            },
+            }
             Ok(Event::Eof) => break,
             Ok(e) => {
                 assert!(xml_wtitter.write_event(e).is_ok())
-            },
+            }
             Err(_) => panic!("Unable to read"),
         }
     }
@@ -137,7 +153,8 @@ fn main() {
 }
 
 fn replace_file_attr(e: &BytesStart, attr: &Attribute, paths: &Vec<String>) -> BytesStart<'static> {
-    let a_path = String::from_utf8(attr.value.to_vec()).unwrap()
+    let a_path = String::from_utf8(attr.value.to_vec())
+        .unwrap()
         .replace(&paths[1], &paths[0]); // Replace in the reverse order
 
     let mut elem = match e.name().as_ref() {
@@ -146,13 +163,15 @@ fn replace_file_attr(e: &BytesStart, attr: &Attribute, paths: &Vec<String>) -> B
         _ => BytesStart::new("Unknown"),
     };
 
-    elem.extend_attributes(e.attributes().map(|attr| attr.unwrap()).filter(|a| {
-        a.key.as_ref() != b"file".as_ref()
-    }));
+    elem.extend_attributes(
+        e.attributes()
+            .map(|attr| attr.unwrap())
+            .filter(|a| a.key.as_ref() != b"file".as_ref()),
+    );
 
-    elem.push_attribute(Attribute{
+    elem.push_attribute(Attribute {
         key: attr.key,
-        value: Cow::Borrowed(&a_path.as_bytes())
+        value: Cow::Borrowed(&a_path.as_bytes()),
     });
 
     elem
