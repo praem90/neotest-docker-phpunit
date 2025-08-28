@@ -89,10 +89,12 @@ fn main() {
     stderr().write_all(&output.stderr).unwrap();
 
     // Copy the log_junit file to the host machine
-    let mut log_junit_args = vec!["cp", &tmp_path, &args.log_junit];
+    let source_path = format!("{}:{}", &container, &tmp_path);
+    let mut log_junit_args = vec!["cp", &source_path, &args.log_junit];
     if !args.standalone {
         log_junit_args.insert(0, "compose");
     }
+
     Command::new("docker")
         .args(log_junit_args)
         .output()
